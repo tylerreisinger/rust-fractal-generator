@@ -1,0 +1,9 @@
+[package]
+name = "fractal"
+version = "0.1.0"
+authors = ["tylerreisinger <reisinger.tyler@gmail.com>"]
+
+[dependencies]
+image = "0.10.4"
+num = "0.1"
+num-complex = "0.1.35"
