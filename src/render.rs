@@ -1,6 +1,8 @@
 use std::fmt;
 use std::error::Error;
 
+use fractal::{FractalOrbit};
+
 use image;
 
 use grid;
@@ -13,8 +15,8 @@ pub enum RenderError {
 
 type RenderResult<T> = Result<T, RenderError>;
 
-pub trait FractalRenderer<Input> {
-    fn render(&self, grid: &grid::Grid, intensities: &[Input]) 
+pub trait FractalRenderer {
+    fn render(&self, grid: &grid::Grid, intensities: &[FractalOrbit]) 
         -> RenderResult<image::DynamicImage>;
 }
 
@@ -61,8 +63,8 @@ impl BwFractalRenderer {
     }
 }
 
-impl FractalRenderer<i32> for BwFractalRenderer {
-    fn render(&self, grid: &grid::Grid, intensities: &[i32]) 
+impl FractalRenderer for BwFractalRenderer {
+    fn render(&self, grid: &grid::Grid, intensities: &[FractalOrbit]) 
             -> RenderResult<image::DynamicImage> {
 
         if grid.num_cells() != intensities.len() {
@@ -74,8 +76,12 @@ impl FractalRenderer<i32> for BwFractalRenderer {
         let mut pixels = Vec::with_capacity(grid.num_cells());
         pixels.resize(grid.num_cells(), 0 as u8);
 
-        for (pixel, intensity) in pixels.iter_mut().zip(intensities.iter()) {
-            let mut float_intensity = (*intensity as f64) / (self.max_iter as f64);
+        for (pixel, orbit) in pixels.iter_mut().zip(intensities.iter()) {
+            let intensity = match *orbit {
+                FractalOrbit::Bounded => self.max_iter as f64,
+                FractalOrbit::Escaped(time) => time,
+            };
+            let mut float_intensity = intensity / (self.max_iter as f64);
             float_intensity *= 255.0; 
             *pixel = float_intensity.floor() as u8;
         }

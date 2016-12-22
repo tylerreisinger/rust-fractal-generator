@@ -8,7 +8,7 @@ use std::error::Error;
 use std::any::Any;
 
 use num_complex::{Complex};
-use fractal::{Fractal};
+use fractal::{Fractal, FractalOrbit};
 use grid;
 
 #[derive(Debug)]
@@ -20,8 +20,8 @@ pub enum RunnerError {
 }
 type RunnerResult<T> = Result<T, RunnerError>;
 
-pub trait FractalRunner<T> {
-    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<T>>;
+pub trait FractalRunner {
+    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<FractalOrbit>>;
 }
 
 pub struct SyncronousRunner<T: Fractal> {
@@ -95,15 +95,11 @@ impl<'a, T: Fractal> SyncronousRunner<T> {
     }
 }
 
-impl<T: Fractal> FractalRunner<i32> for SyncronousRunner<T> {
-    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<i32>> {
-        let mut values = Vec::with_capacity(grid.num_cells());
-        values.resize(grid.num_cells(), 0);
-
-        for (i, (x, y)) in grid.iter().enumerate() {
-            let iters = self.fractal.test(Complex::new(x, y));
-            values[i] = iters;
-        }
+impl<T: Fractal> FractalRunner for SyncronousRunner<T> {
+    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<FractalOrbit>> {
+        let values = grid.iter()
+            .map(|(x,y)| self.fractal.test(Complex::new(x, y)))
+            .collect();
 
         Ok(values)
     }
@@ -114,11 +110,11 @@ impl<T: Fractal + Send + Sync + 'static> MultiThreadedRunner<T> {
         MultiThreadedRunner{fractal: fractal, num_threads: num_threads} 
     }
 
-    fn execute_workers(&self, grid: &grid::Grid) -> RunnerResult<Vec<i32>> {
+    fn execute_workers(&self, grid: &grid::Grid) -> RunnerResult<Vec<FractalOrbit>> {
         const STRIP_HEIGHT: u32 = 1; 
 
         let mut values = Vec::with_capacity(grid.num_cells());
-        values.resize(grid.num_cells(), 0);
+        values.resize(grid.num_cells(), FractalOrbit::Bounded);
 
         let fractal = sync::Arc::new(self.fractal.clone());
 
@@ -126,7 +122,7 @@ impl<T: Fractal + Send + Sync + 'static> MultiThreadedRunner<T> {
         let mut senders = Vec::with_capacity(self.num_threads);
 
         let (row_sender, row_receiver) = 
-            mpsc::channel::<(grid::GridStrip, Vec<i32>)>();
+            mpsc::channel::<(grid::GridStrip, Vec<FractalOrbit>)>();
 
         for _ in 0..self.num_threads {
             let (tx, rx) = mpsc::channel::<Option<grid::GridStrip>>();
@@ -177,7 +173,7 @@ impl<T: Fractal + Send + Sync + 'static> MultiThreadedRunner<T> {
 
 fn thread_worker<T: Fractal + Send + Sync + 'static>(fractal: sync::Arc<T>, 
         grid: grid::Grid, recver: mpsc::Receiver<Option<grid::GridStrip>>,
-        row_sender: mpsc::Sender<(grid::GridStrip, Vec<i32>)>) -> RunnerResult<()>{
+        row_sender: mpsc::Sender<(grid::GridStrip, Vec<FractalOrbit>)>) -> RunnerResult<()>{
     loop {
         let item = try!(recver.recv());
         match item {
@@ -194,8 +190,8 @@ fn thread_worker<T: Fractal + Send + Sync + 'static>(fractal: sync::Arc<T>,
     Ok(())
 }
 
-impl<T: Fractal + Send + Sync + 'static> FractalRunner<i32> for MultiThreadedRunner<T> {
-    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<i32>> {
+impl<T: Fractal + Send + Sync + 'static> FractalRunner for MultiThreadedRunner<T> {
+    fn run(&self, grid: &grid::Grid) -> RunnerResult<Vec<FractalOrbit>> {
         let values = self.execute_workers(grid);
 
         values

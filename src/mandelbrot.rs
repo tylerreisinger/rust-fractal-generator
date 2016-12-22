@@ -1,6 +1,6 @@
 use num_complex::{Complex};
 
-use fractal::{Fractal};
+use fractal::{Fractal, FractalOrbit, EscapeTimeType};
 
 #[derive(Clone)]
 pub struct Mandelbrot {
@@ -14,7 +14,7 @@ impl Mandelbrot {
 }
 
 impl Fractal for Mandelbrot {
-    fn test(&self, c: Complex<f64>) -> i32 {
+    fn test(&self, c: Complex<f64>) -> FractalOrbit {
         const MAX_RADIUS_SQR: f64 = 4.0;
         let mut z = Complex::new(0.0, 0.0);
         let mut i: i32 = 0;
@@ -23,10 +23,10 @@ impl Fractal for Mandelbrot {
             i += 1;
             z = z*z + c;
             if i >= self.iter_limit {
-                break;
+                return FractalOrbit::Bounded;
             }
         }
 
-        i 
+        FractalOrbit::Escaped(i as EscapeTimeType)
     }
 }
