@@ -7,6 +7,7 @@ pub mod mandelbrot;
 pub mod fractal;
 pub mod runner;
 pub mod render;
+pub mod opt;
 
 use std::fs;
 use std::path;

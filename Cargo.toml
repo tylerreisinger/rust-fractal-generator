@@ -7,3 +7,7 @@ authors = ["tylerreisinger <reisinger.tyler@gmail.com>"]
 image = "0.10.4"
 num = "0.1"
 num-complex = "0.1.35"
+
+[profile.release]
+debug = true
+
