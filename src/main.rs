@@ -12,16 +12,18 @@ use std::fs;
 use std::path;
 
 use render::{FractalRenderer};
+use runner::FractalRunner;
 
 fn main() {
-    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 250, 250);
+    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 500, 500);
     let mandel = mandelbrot::Mandelbrot::new(250);
 
-    let runner = runner::FractalRunner::new(mandel);
+    let runner = runner::MultiThreadedRunner::new(mandel, 2);
     let renderer = render::BwFractalRenderer::new(250);
 
-    let intensities = runner.run(&grid);
+    let intensities = runner.run(&grid).unwrap();
     let image = renderer.render(&grid, &intensities).unwrap();
+
     save_image(&image).unwrap();
 }
 

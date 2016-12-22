@@ -2,6 +2,7 @@ use num_complex::{Complex};
 
 use fractal::{Fractal};
 
+#[derive(Clone)]
 pub struct Mandelbrot {
     iter_limit: i32,
 }
@@ -25,6 +26,7 @@ impl Fractal for Mandelbrot {
                 break;
             }
         }
+
         i 
     }
 }
