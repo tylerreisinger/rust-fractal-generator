@@ -13,16 +13,16 @@ impl CycleDetector {
         CycleDetector{backlog: vec, write_ptr: 0}
     }
 
-    pub fn check_pt(&mut self, pt: &Complex<f64>) -> bool {
+    pub fn check_pt(&mut self, pt: Complex<f64>) -> bool {
         let mut ret = false;
 
         for prev_pt in self.backlog.iter() {
-            if *pt == *prev_pt {
+            if pt == *prev_pt {
                 ret = true;
             }
         }
 
-        self.backlog[self.write_ptr] = *pt;
+        self.backlog[self.write_ptr] = pt;
         self.write_ptr += 1;
         if self.write_ptr == self.backlog.len() {
             self.write_ptr -= self.backlog.len();
