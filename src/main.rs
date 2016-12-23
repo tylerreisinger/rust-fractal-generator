@@ -16,11 +16,12 @@ use render::{FractalRenderer};
 use runner::FractalRunner;
 
 fn main() {
-    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 4000, 4000);
+    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 1000, 1000);
     let mandel = mandelbrot::Mandelbrot::new(500);
 
     let runner = runner::MultiThreadedRunner::new(mandel, 2);
-    let renderer = render::BwFractalRenderer::new(500);
+    let renderer = render::GrayscaleFractalRenderer::new(
+        render::map::LogarithmicMapper::new(500, 100.0));
 
     let intensities = runner.run(&grid).unwrap();
     let image = renderer.render(&grid, &intensities).unwrap();
@@ -29,6 +30,6 @@ fn main() {
 }
 
 fn save_image(img: &image::DynamicImage) -> image::ImageResult<()> {
-    let mut file = fs::File::create(&path::Path::new("test.png")).unwrap();
+    let mut file = fs::File::create(&path::Path::new("test.png"))?;
     img.save(&mut file, image::PNG)
 }
