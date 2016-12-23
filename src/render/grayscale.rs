@@ -3,7 +3,7 @@ use grid;
 use image;
 use fractal::{FractalOrbit};
 use render::{RenderError, FractalRenderer, RenderResult};
-use super::map::OrbitMapper;
+use super::map::{OrbitMapper, MappedCellIntensity};
 
 pub struct GrayscaleFractalRenderer<T> {
     mapper: T,
@@ -27,8 +27,15 @@ impl<T: OrbitMapper> FractalRenderer for GrayscaleFractalRenderer<T> {
 
         let pixels = self.mapper
             .map(intensities).iter()
-            .map(|val| val * (u8::max_value() as f64))
-            .map(|val| val.floor() as u8)
+            .map(|item| {
+                match *item {
+                    MappedCellIntensity::BoundedValue => 0,
+                    MappedCellIntensity::EscapedValue(val) => {
+                        let pixel_val = val * (u8::max_value() as f64);
+                        pixel_val.floor() as u8
+                    }
+                }
+            })
             .collect();
 
         let buf = image::ImageBuffer::<image::Luma<u8>, _>

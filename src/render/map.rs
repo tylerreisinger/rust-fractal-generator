@@ -1,8 +1,15 @@
 use fractal::FractalOrbit;
 
 pub trait OrbitMapper {
-    fn map(&self, vals: &[FractalOrbit]) -> Vec<f64>; 
+    fn map(&self, vals: &[FractalOrbit]) -> Vec<MappedCellIntensity>; 
 }
+
+pub enum MappedCellIntensity {
+    EscapedValue(f64),
+    BoundedValue,
+}
+
+use self::MappedCellIntensity::{EscapedValue, BoundedValue};
 
 pub struct LinearMapper {
     max_iter: usize,
@@ -22,16 +29,17 @@ impl LinearMapper {
         LinearMapper{max_iter: max_iter}
     }
 
-    fn map(&self, val: FractalOrbit) -> f64 {
+    fn map(&self, val: FractalOrbit) -> MappedCellIntensity {
         match val {
-            FractalOrbit::Bounded => 1.0,
-            FractalOrbit::Escaped(time) => time / (self.max_iter as f64)
+            FractalOrbit::Bounded => BoundedValue,
+            FractalOrbit::Escaped(time) => 
+                EscapedValue(time / (self.max_iter as f64))
         }
     }
 }
 
 impl OrbitMapper for LinearMapper {
-    fn map(&self, vals: &[FractalOrbit]) -> Vec<f64> {
+    fn map(&self, vals: &[FractalOrbit]) -> Vec<MappedCellIntensity> {
         vals.iter()
             .map(|o| self.map(*o))
             .collect()
@@ -48,12 +56,12 @@ impl HistogramLinearMapper {
 }
 
 impl OrbitMapper for HistogramLinearMapper {
-    fn map(&self, vals: &[FractalOrbit]) -> Vec<f64> {
+    fn map(&self, vals: &[FractalOrbit]) -> Vec<MappedCellIntensity> {
         let mut histogram = vec![0; self.max_iter+1];
 
         for orbit in vals.iter() {
             match *orbit {
-                FractalOrbit::Bounded => histogram[self.max_iter] += 1,
+                FractalOrbit::Bounded => {},
                 FractalOrbit::Escaped(val) => histogram[val.floor() as usize] += 1,
             }
         }
@@ -69,14 +77,13 @@ impl OrbitMapper for HistogramLinearMapper {
         let output: Vec<_> = vals.iter()
             .map(|item| {
                 match *item {
-                    FractalOrbit::Bounded => self.max_iter as f64,
-                    FractalOrbit::Escaped(val) => val,
+                    FractalOrbit::Bounded => BoundedValue,
+                    FractalOrbit::Escaped(val) => {
+                        let trunc = val.floor();
+                        let bin_val = mapping[trunc as usize];
+                        EscapedValue(bin_val)
+                    }
                 }
-            })
-            .map(|item| {
-                let trunc = item.floor();
-                let bin_val = mapping[trunc as usize];
-                bin_val
             })
             .collect();
 
@@ -91,19 +98,21 @@ impl LogarithmicMapper {
 }
 
 impl OrbitMapper for LogarithmicMapper {
-    fn map(&self, vals: &[FractalOrbit]) -> Vec<f64> {
+    fn map(&self, vals: &[FractalOrbit]) -> Vec<MappedCellIntensity> {
         let max = self.max_iter as f64;
         let multiplier = self.strength + 1.0;
         vals.iter()
             .map(|item| {
                 match *item {
-                    FractalOrbit::Bounded => 1.0,
-                    FractalOrbit::Escaped(val) => val / max,
+                    FractalOrbit::Bounded => BoundedValue,
+                    FractalOrbit::Escaped(val) => {
+                        let scaled_val = val / max;
+                        let mapped_val = f64::log10(scaled_val * multiplier + 1.0) 
+                            / f64::log10(multiplier + 1.0);
+                        EscapedValue(mapped_val)
+                    }
                 }
             })
-            .map(|val| {
-                f64::log10(val * multiplier + 1.0) / f64::log10(multiplier + 1.0)
-            })
-            .collect::<Vec<f64>>()
+            .collect::<Vec<_>>()
     }
 }
