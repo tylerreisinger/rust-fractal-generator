@@ -25,8 +25,10 @@ impl<T: OrbitMapper> FractalRenderer for GrayscaleFractalRenderer<T> {
                     "Grid and intensities dimensions don't match".to_string()));
         }
 
-        let pixels = self.mapper
-            .map(intensities).iter()
+        let mapped_result = self.mapper.map(
+            grid.cells_wide(), grid.cells_high(), intensities);
+        
+        let pixels: Vec<_> = mapped_result.values.iter()
             .map(|item| {
                 match *item {
                     MappedCellIntensity::BoundedValue => 0,
@@ -39,7 +41,8 @@ impl<T: OrbitMapper> FractalRenderer for GrayscaleFractalRenderer<T> {
             .collect();
 
         let buf = image::ImageBuffer::<image::Luma<u8>, _>
-                   ::from_raw(grid.cells_wide(), grid.cells_high(), pixels).unwrap();
+               ::from_raw(mapped_result.width as u32, mapped_result.height as u32,
+                      pixels).unwrap();
 
         Ok(image::ImageLuma8(buf))
     }

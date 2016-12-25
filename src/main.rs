@@ -16,12 +16,17 @@ use render::{FractalRenderer};
 use runner::FractalRunner;
 
 fn main() {
-    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 1000, 1000);
-    let mandel = mandelbrot::Mandelbrot::new(500);
+    const MAX_ITERS: usize = 500;
+
+    let grid = grid::Grid::new(-1.5, 1.0, 1.0, -1.0, 2000, 2000);
+    let mandel = mandelbrot::Mandelbrot::new(MAX_ITERS);
 
     let runner = runner::MultiThreadedRunner::new(mandel, 2);
-    let renderer = render::GrayscaleFractalRenderer::new(
-        render::map::LogarithmicMapper::new(500, 100.0));
+    let renderer = 
+    render::GrayscaleFractalRenderer::new(
+        render::map::AntialiasMapper::new(1,
+            render::map::LogarithmicMapper::new(MAX_ITERS, 100.0))
+    );
 
     let intensities = runner.run(&grid).unwrap();
     let image = renderer.render(&grid, &intensities).unwrap();

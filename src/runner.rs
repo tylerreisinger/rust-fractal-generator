@@ -111,7 +111,7 @@ impl<T: Fractal + Send + Sync + 'static> MultiThreadedRunner<T> {
     }
 
     fn execute_workers(&self, grid: &grid::Grid) -> RunnerResult<Vec<FractalOrbit>> {
-        const STRIP_HEIGHT: u32 = 1; 
+        const STRIP_HEIGHT: usize = 1; 
 
         let mut values = Vec::with_capacity(grid.num_cells());
         values.resize(grid.num_cells(), FractalOrbit::Bounded);

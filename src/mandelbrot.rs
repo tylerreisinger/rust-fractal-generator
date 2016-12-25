@@ -4,11 +4,11 @@ use fractal::{Fractal, FractalOrbit, EscapeTimeType};
 
 #[derive(Clone)]
 pub struct Mandelbrot {
-    iter_limit: i32,
+    iter_limit: usize,
 }
 
 impl Mandelbrot {
-    pub fn new(iter_limit: i32) -> Self {
+    pub fn new(iter_limit: usize) -> Self {
         Mandelbrot{iter_limit: iter_limit}
     }
 
@@ -33,7 +33,7 @@ impl Mandelbrot {
         const MAX_RADIUS_SQR: f64 = 4.0;
 
         let mut z = Complex::new(0.0, 0.0);
-        let mut i: i32 = 0;
+        let mut i: usize = 0;
 
         while z.norm_sqr() < MAX_RADIUS_SQR && i <= self.iter_limit {
             i += 1;

@@ -8,14 +8,14 @@ pub struct Grid {
     bottom: f64,
     dx: f64,
     dy: f64,
-    cells_x: u32,
-    cells_y: u32,
+    cells_x: usize,
+    cells_y: usize,
 }
 
 #[derive(Clone)]
 pub struct GridStrip {
-    pub start: u32,
-    pub height: u32,
+    pub start: usize,
+    pub height: usize,
 }
 
 pub struct GridIter<'a> {
@@ -26,8 +26,8 @@ pub struct GridIter<'a> {
 
 pub struct StripIter<'a> {
     grid: &'a Grid,
-    strip_height: u32, 
-    cur_pos: u32,
+    strip_height: usize, 
+    cur_pos: usize,
 }
 
 pub struct GridStripIter<'a> {
@@ -38,7 +38,7 @@ pub struct GridStripIter<'a> {
 
 impl Grid {
     pub fn new(left: f64, top: f64, right: f64, bottom: f64,
-               cells_x: u32, cells_y: u32) -> Self {
+               cells_x: usize, cells_y: usize) -> Self {
         let width = right-left;
         let height = top-bottom;
         Grid{left: left, top: top, right: right, bottom: bottom,
@@ -57,21 +57,21 @@ impl Grid {
     }
 
     #[inline]
-    pub fn cells_wide(&self) -> u32 {
+    pub fn cells_wide(&self) -> usize {
         self.cells_x
     }
     
     #[inline]
-    pub fn cells_high(&self) -> u32 {
+    pub fn cells_high(&self) -> usize {
         self.cells_y
     }
 
     #[inline]
-    pub fn row_start(&self, row: u32) -> usize {
+    pub fn row_start(&self, row: usize) -> usize {
         if row >= self.cells_y {
             panic!("Row index out of bound");
         }
-        (self.cells_y * row) as usize
+        self.cells_y * row
     }
 
     #[inline]
@@ -79,7 +79,7 @@ impl Grid {
         (self.left + self.dx * 0.5, self.top + self.dy * 0.5)
     }
 
-    pub fn cell_position(&self, x: u32, y: u32) -> Option<(f64, f64)> {
+    pub fn cell_position(&self, x: usize, y: usize) -> Option<(f64, f64)> {
         if x < self.cells_x && y < self.cells_y {
             let x = self.left + ((x as f64) + 0.5) * self.dx;
             let y = self.top + ((y as f64) + 0.5) * self.dy;
@@ -95,7 +95,7 @@ impl Grid {
 }
 
 impl<'a> Grid {
-    pub fn iter_strips(&'a self, height: u32) -> StripIter<'a> {
+    pub fn iter_strips(&'a self, height: usize) -> StripIter<'a> {
         StripIter::new(self, 0, height)
     }
 }
@@ -105,7 +105,7 @@ impl<'a> GridIter<'a> {
         let first_cell = grid.first_cell_position();
         GridIter{grid: grid, x: first_cell.0, y: first_cell.1}
     }
-    pub fn from_row(grid: &'a Grid, row: u32) -> Self {
+    pub fn from_row(grid: &'a Grid, row: usize) -> Self {
         let (x, y) = grid.cell_position(0, row).unwrap();
         GridIter{grid: grid, x: x, y: y}
     }
@@ -138,7 +138,7 @@ impl fmt::Display for GridStrip {
 }
 
 impl GridStrip {
-    pub fn new(start: u32, height: u32) -> Self {
+    pub fn new(start: usize, height: usize) -> Self {
         GridStrip{start: start, height: height}
     }
 
@@ -180,7 +180,7 @@ impl<'a> Iterator for GridStripIter<'a> {
 }
 
 impl<'a> StripIter<'a> {
-    pub fn new(grid: &'a Grid, start_pos: u32, strip_height: u32) -> Self {
+    pub fn new(grid: &'a Grid, start_pos: usize, strip_height: usize) -> Self {
         StripIter{grid: grid, strip_height: strip_height, cur_pos: start_pos}
     }
 }
